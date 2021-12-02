@@ -1,12 +1,15 @@
 package advent_of_code_2021.day2.part2
 
+import org.assertj.core.api.Assertions
 import java.io.File
 
 fun main(args: Array<String>) {
-    val commands = parseCommands("src/main/kotlin/advent_of_code_2021/day2/input1.txt")
+    val commands = parseCommands("src/main/kotlin/advent_of_code_2021/day2/part2/input.txt")
     val initialSubmarine = Submarine(position = 0, depth = 0, aim = 0)
     val finalSubmarine = commands.fold(initialSubmarine, Submarine::perform)
-    println(finalSubmarine.position * finalSubmarine.depth)
+    val result = finalSubmarine.position * finalSubmarine.depth
+    println(result)
+    Assertions.assertThat(result).isEqualTo(1568138742)
 }
 
 private fun parseCommands(fileName: String): Sequence<Command> {

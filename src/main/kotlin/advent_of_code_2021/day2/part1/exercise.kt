@@ -1,20 +1,19 @@
-package advent_of_code_2021.day2
+package advent_of_code_2021.day2.part1
 
 import java.io.File
 
 fun main(args: Array<String>) {
+    val commands = parseCommands("src/main/kotlin/advent_of_code_2021/day2/input1.txt")
+    val initial = Submarine(0, 0)
+    val finalSubmarine = commands.fold(initial) { sub, command -> sub.perform(command) }
+    println(finalSubmarine.position * finalSubmarine.depth)
+}
 
-    val fileName = "src/main/kotlin/advent_of_code_2021/day2/input1.txt"
-    val commands = File(fileName).readLines()
+private fun parseCommands(fileName: String): Sequence<Command> {
+    return File(fileName).readLines()
         .asSequence()
         .map { it.split(' ') }
         .map { (command, quantity) -> Command(Verb.valueOf(command.uppercase()), quantity.toInt()) }
-
-    val initial = Submarine(0, 0)
-
-    val finalSubmarine = commands.fold(initial) { sub, command -> sub.perform(command) }
-    println(finalSubmarine.position * finalSubmarine.depth)
-
 }
 
 data class Command(

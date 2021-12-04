@@ -1,29 +1,27 @@
 package advent_of_code_2021.day1.part2
 
+import advent_of_code_2021.shared.parseInput
 import org.assertj.core.api.Assertions
-import java.io.File
 
-fun main(args: Array<String>) {
-    val lines = parseNumbers("src/main/kotlin/advent_of_code_2021/day1/part2/input.txt")
-    val result = countIncreasesBy2(lines)
+
+fun main() {
+    val depths = parseInput("day1/part2/input.txt").map { it.toInt() }
+    val result = countIncreasesComparingWithNext(depths)
     println(result)
     Assertions.assertThat(result).isEqualTo(1797)
 }
 
-private fun countIncreasesBy2(lines: Sequence<Int>): Int {
-    val aggregated = lines
-        .windowed(size = 3, step = 1)
-        .map { it.sum() }
-    return aggregated
+internal fun countIncreasesComparingWithNext(depths: Sequence<Int>): Int {
+    return aggregateByWindowSize3(depths)
         .zipWithNext { previous, next -> isIncreasing(previous, next) }
         .filter { it }
         .count()
 }
 
-private fun parseNumbers(fileName: String): Sequence<Int> {
-    return File(fileName).readLines()
-        .asSequence()
-        .map { it.toInt() }
+internal fun aggregateByWindowSize3(depths: Sequence<Int>): Sequence<Int> {
+    return depths
+        .windowed(size = 3, step = 1)
+        .map { it.sum() }
 }
 
-private fun isIncreasing(a: Int, b: Int) = b > a
+internal fun isIncreasing(a: Int, b: Int) = b > a

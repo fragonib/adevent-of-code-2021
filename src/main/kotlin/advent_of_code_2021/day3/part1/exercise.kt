@@ -14,42 +14,32 @@ internal fun resolve(inputSource: String): Int {
     return gammaRate * epsilonRate
 }
 
-// Gamma
 internal fun calculateGammaRate(lines: Sequence<String>): Int {
     val columnNumber = lines.firstOrNull()!!.length
     return (0 until columnNumber)
-        .map { column -> moreFrequentCharOnColumn(lines, column) }
+        .map { column -> frequentCharOnColumn(lines, column, Selector.MORE) }
         .joinToString(separator = "")
         .toInt(radix = 2)
 }
 
-private fun moreFrequentCharOnColumn(lines: Sequence<String>, column: Int): Char =
-    lines.map { it[column] }.joinToString(separator = "")
-        .let(::moreFrequentChar)
-
-internal fun moreFrequentChar(cadena: String): Char {
-    return cadena.groupingBy { it }.eachCount()
-        .entries
-        .maxByOrNull { it.value }!!
-        .key
-}
-
-// Epsilon
 internal fun calculateEpsilonRate(lines: Sequence<String>): Int {
     val columnNumber = lines.firstOrNull()!!.length
     return (0 until columnNumber)
-        .map { column -> lessFrequentCharOnColumn(lines, column) }
+        .map { column -> frequentCharOnColumn(lines, column, Selector.LESS) }
         .joinToString(separator = "")
         .toInt(radix = 2)
 }
 
-private fun lessFrequentCharOnColumn(lines: Sequence<String>, column: Int): Char =
-    lines.map { it[column] }.joinToString(separator = "")
-        .let(::lessFrequentChar)
+enum class Selector(val comparator: Comparator<Map.Entry<Char, Int>>) {
+    MORE(compareBy { it.value }),
+    LESS(MORE.comparator.reversed())
+}
 
-internal fun lessFrequentChar(cadena: String): Char {
-    return cadena.groupingBy { it }.eachCount()
+private fun frequentCharOnColumn(lines: Sequence<String>, column: Int, selector: Selector): Char {
+    return lines
+        .map { it[column] }
+        .groupingBy { it }.eachCount()
         .entries
-        .minByOrNull { it.value }!!
+        .maxWithOrNull(selector.comparator)!!
         .key
 }

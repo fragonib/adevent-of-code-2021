@@ -1,21 +1,16 @@
 package advent_of_code_2021.day3.part1
 
-import java.io.File
+import advent_of_code_2021.shared.parseInput
 
-fun main(args: Array<String>) {
-    val lines = parseNumbers("src/main/kotlin/advent_of_code_2021/day3/part1/input.txt")
-    val result = resolve(lines)
-    println(result)
+
+fun main() {
+    println(resolve("day3/part1/input.txt"))
 }
 
-private fun parseNumbers(fileName: String): Sequence<String> {
-    return File(fileName).readLines()
-        .asSequence()
-}
-
-internal fun resolve(lines: Sequence<String>): Int {
-    val gammaRate = calculateGammaRate(lines)
-    val epsilonRate = calculateEpsilonRate(lines)
+internal fun resolve(inputSource: String): Int {
+    val reportLines = parseInput(inputSource)
+    val gammaRate = calculateGammaRate(reportLines)
+    val epsilonRate = calculateEpsilonRate(reportLines)
     return gammaRate * epsilonRate
 }
 
@@ -40,7 +35,6 @@ internal fun moreFrequentChar(cadena: String): Char {
 }
 
 // Epsilon
-
 internal fun calculateEpsilonRate(lines: Sequence<String>): Int {
     val columnNumber = lines.firstOrNull()!!.length
     return (0 until columnNumber)

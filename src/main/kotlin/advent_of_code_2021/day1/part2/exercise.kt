@@ -1,14 +1,17 @@
 package advent_of_code_2021.day1.part2
 
+import advent_of_code_2021.day1.part1.resolve
 import advent_of_code_2021.shared.parseInput
 import org.assertj.core.api.Assertions
 
 
 fun main() {
-    val depths = parseInput("day1/part2/input.txt").map { it.toInt() }
-    val result = countIncreasesComparingWithNext(depths)
-    println(result)
-    Assertions.assertThat(result).isEqualTo(1797)
+    println(resolve("day1/part1/input.txt"))
+}
+
+internal fun resolve(inputSource: String): Int {
+    val depths = parseInput(inputSource).map { it.toInt() }
+    return countIncreasesComparingWithNext(depths)
 }
 
 internal fun countIncreasesComparingWithNext(depths: Sequence<Int>): Int {

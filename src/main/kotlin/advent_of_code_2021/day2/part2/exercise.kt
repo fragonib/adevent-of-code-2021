@@ -1,20 +1,20 @@
 package advent_of_code_2021.day2.part2
 
-import org.assertj.core.api.Assertions
-import java.io.File
+import advent_of_code_2021.shared.parseInput
 
-fun main(args: Array<String>) {
-    val commands = parseCommands("src/main/kotlin/advent_of_code_2021/day2/part2/input.txt")
+fun main() {
+    println(resolve("day2/part2/input.txt"))
+}
+
+internal fun resolve(inputSource: String): Int {
+    val commands = parseCommands(inputSource)
     val initialSubmarine = Submarine(position = 0, depth = 0, aim = 0)
     val finalSubmarine = commands.fold(initialSubmarine, Submarine::perform)
-    val result = finalSubmarine.position * finalSubmarine.depth
-    println(result)
-    Assertions.assertThat(result).isEqualTo(1568138742)
+    return finalSubmarine.position * finalSubmarine.depth
 }
 
 private fun parseCommands(fileName: String): Sequence<Command> {
-    return File(fileName).readLines()
-        .asSequence()
+    return parseInput(fileName)
         .map { it.split(' ') }
         .map { (command, quantity) -> Command(Verb.valueOf(command.uppercase()), quantity.toInt()) }
 }

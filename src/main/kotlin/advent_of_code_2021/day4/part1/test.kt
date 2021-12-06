@@ -1,4 +1,4 @@
-package advent_of_code_2021.day4
+package advent_of_code_2021.day4.part1
 
 import org.assertj.core.api.Assertions.assertThat
 

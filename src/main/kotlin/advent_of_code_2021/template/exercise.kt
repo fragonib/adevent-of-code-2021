@@ -8,6 +8,6 @@ fun main() {
 }
 
 internal fun resolve(inputSource: String): Int {
-    val depths = parseInput(inputSource)
+    val lines = parseInput(inputSource)
     TODO()
 }

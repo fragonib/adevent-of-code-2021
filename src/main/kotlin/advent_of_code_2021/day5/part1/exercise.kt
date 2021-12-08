@@ -74,6 +74,10 @@ internal data class Point(val x: Int, val y: Int) {
             return Point(coordinates[0].toInt(), coordinates[1].toInt())
         }
     }
+
+    override fun toString(): String {
+        return "$x,$y"
+    }
 }
 
 internal data class Line(val start: Point, val end: Point) {
@@ -87,10 +91,32 @@ internal data class Line(val start: Point, val end: Point) {
     fun isStraight(): Boolean = isHorizontal() || isVertical()
     fun isHorizontal(): Boolean = start.y == end.y
     fun isVertical(): Boolean = start.x == end.x
+
     fun normalize(): Line = when {
-        start.x > end.x -> this.reserve()
-        start.y > end.y -> this.reserve()
+        start.x > end.x -> Line(this.end, this.start)
+        start.x == end.x && start.y > end.y -> Line(this.end, this.start)
         else -> this
     }
-    private fun reserve(): Line = Line(end, start)
+
+    fun points(): Sequence<Point> {
+        return generateSequence(start) { p ->
+                val xStep = when {
+                    start.x == end.x -> 0
+                    start.x > end.x -> -1
+                    else -> 1
+                }
+                val yStep = when {
+                    start.y == end.y -> 0
+                    start.y > end.y -> -1
+                    else -> 1
+                }
+                Point(p.x + xStep, p.y + yStep)
+            }
+            .takeWhile { it != end } + sequenceOf(end)
+    }
+
+    override fun toString(): String {
+        return "$start -> $end"
+    }
+
 }

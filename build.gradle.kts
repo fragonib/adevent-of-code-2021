@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.6.0"
+    kotlin("kapt") version "1.6.0"
     application
 }
 
@@ -13,15 +14,24 @@ repositories {
 }
 
 dependencies {
-    implementation("org.assertj:assertj-core:3.11.1")
+    val arrowVersion = "0.12.1"
+    val assertJVersion = "3.21.0"
+    implementation(platform("io.arrow-kt:arrow-stack:${arrowVersion}"))
+    implementation("io.arrow-kt:arrow-core")
+    implementation("io.arrow-kt:arrow-core-data")
+
+    implementation("org.assertj:assertj-core:$assertJVersion")
+
     testImplementation(kotlin("test"))
-    testImplementation("org.assertj:assertj-core:3.11.1")
+    testImplementation("org.assertj:assertj-core:$assertJVersion")
+
+    kapt("io.arrow-kt:arrow-meta:$arrowVersion")
 }
 
 tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile>() {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
 }

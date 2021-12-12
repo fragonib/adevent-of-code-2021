@@ -11,22 +11,22 @@ fun main() {
 }
 
 internal fun resolve(inputSource: String): Int {
-    val floorHeights = parseFloorHeights(inputSource)
-    return calculateLowerPoints(floorHeights)
-        .map { floorHeights.coord(it) }
+    val floorMap = parseFloorHeights(inputSource)
+    return calculateLowerPoints(floorMap)
+        .map { floorMap.coord(it) }
         .sumOf { floorHeight -> riskLevel(floorHeight) }
 }
 
-internal fun calculateLowerPoints(floorHeights: List<List<Int>>): Sequence<Coordinate> {
-    return floorHeights.scan()
+internal fun calculateLowerPoints(floorMap: FloorMap): Sequence<Coordinate> {
+    return floorMap.scan()
         .map { targetPoint ->
-            val size = Coordinate(y = floorHeights.size, x = floorHeights.first().size)
+            val size = Coordinate(y = floorMap.size, x = floorMap.first().size)
             val adjacentsPoints = adjacentsPoints(targetPoint, size)
             Pair(targetPoint, adjacentsPoints)
         }
         .filter { (targetPoint, adjacentsPoints) ->
-            val floorHeight = floorHeights.coord(targetPoint)
-            val adjacentsHeights = adjacentsPoints.map { floorHeights.coord(it) }
+            val floorHeight = floorMap.coord(targetPoint)
+            val adjacentsHeights = adjacentsPoints.map { floorMap.coord(it) }
             adjacentsHeights.minOf { it } > floorHeight
         }
         .map { it.first }
@@ -36,11 +36,13 @@ internal fun riskLevel(height: Int): Int = 1 + height
 
 internal data class Coordinate(val x: Int, val y: Int)
 
-internal fun List<List<Int>>.coord(coord: Coordinate): Int {
+internal fun FloorMap.coord(coord: Coordinate): Int {
     return this[coord.y][coord.x]
 }
 
-internal fun List<List<Int>>.scan(): Sequence<Coordinate> {
+internal typealias FloorMap = List<List<Int>>
+
+internal fun FloorMap.scan(): Sequence<Coordinate> {
     val size = Coordinate(x = this.first().size, y = this.size)
     return (0 until size.y).asSequence().flatMap { rowNumber ->
         (0 until size.x).asSequence()
@@ -59,7 +61,7 @@ internal fun adjacentsPoints(targetPoint: Coordinate, boardSize: Coordinate): Se
         .filter { it.x < boardSize.x && it.y < boardSize.y }
 }
 
-internal fun parseFloorHeights(inputSource: String): List<List<Int>> {
+internal fun parseFloorHeights(inputSource: String): FloorMap {
     return parseInput(inputSource)
         .map { line -> line.toList().map { it.digitToInt() } }
         .toList()

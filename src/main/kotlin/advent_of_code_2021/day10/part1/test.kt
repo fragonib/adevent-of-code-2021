@@ -4,5 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 
 fun main() {
     val result = resolve("day10/part1/test_input.txt")
+    println(result)
     assertThat(result).isEqualTo(26397)
 }

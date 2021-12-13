@@ -1,9 +1,7 @@
 package advent_of_code_2021.day10.part1
 
 import advent_of_code_2021.shared.parseInput
-import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
+import arrow.core.*
 
 
 fun main() {
@@ -13,63 +11,119 @@ fun main() {
 
 internal fun resolve(inputSource: String): Int {
     return parseInput(inputSource)
-        .map { parse(it.toList()) }
-        .map { either -> either.swap().orNull() }
+        .map {
+            val parse = parseLine(it.toList())
+            parse
+        }
+        .map { (either, _) -> either.swap().orNull() }
         .filter { it is Error.Corrupted }
         .map { score((it as Error.Corrupted).found) }
         .sum()
 }
 
-fun parse(line: List<Char>): Either<Error, Expression> {
-    return exprParsing(line).first
-}
+internal var OPENINGS = arrayOf('(', '[', '{', '<')
 
-val EMPTY = listOf<Char>()
+internal typealias UnparsedLiteral = List<Char>
+internal typealias ParsedResult = Either<Error, Expression>
+internal typealias Parsing = Pair<ParsedResult, UnparsedLiteral>
 
-fun exprParsing(line: List<Char>): Pair<Either<Error, Expression>, List<Char>> {
+internal fun parseLine(unparsedLiteral: UnparsedLiteral): Parsing {
 
-    if (line.none()) return Pair(Expression.Empty.right(), EMPTY)
+    if (unparsedLiteral.none())
+        return Parsing(Expression.Empty.right(), unparsedLiteral)
 
-    val head = line.first()
-    val rest = line.drop(1)
+    val consumed = unparsedLiteral.first()
+    val rest = unparsedLiteral.drop(1)
 
-    return when (head) {
-        '(' -> lookFor(')', rest)
-        '[' -> lookFor(']', rest)
-        '{' -> lookFor('}', rest)
-        '<' -> lookFor('>', rest)
-        else -> Pair(Expression.Empty.right(), line)
+    return when (consumed) {
+        '(' -> lookFor(')', rest, Expression::Parenthesis)
+        '[' -> lookFor(']', rest, Expression::SquareBrackets)
+        '{' -> lookFor('}', rest, Expression::KeyBrackets)
+        '<' -> lookFor('>', rest, Expression::AngleBrackets)
+        else -> Parsing(Error.Corrupted(expected = OPENINGS, found = consumed).left(), rest)
+    }.let { completedParsing ->
+        val unconsumed = completedParsing.second
+        val pair = when {
+            unconsumed.none() -> completedParsing
+            unconsumed.first() in OPENINGS -> completedParsing.mergeWith(
+                producer = { parseLine(it) },
+                acc = { a, b -> Expression.Sequence(a, b) }
+            )
+            else -> completedParsing
+        }
+        pair
     }
 }
 
-private fun lookFor(looking: Char, rest: List<Char>): Pair<Either<Error, Expression>, List<Char>> {
-    val (parsedExpr: Either<Error, Expression>, unparsed: List<Char>) = exprParsing(rest)
-    if (parsedExpr.isLeft()) return Pair(parsedExpr, EMPTY)
+// LINE := EXPR EXPR*
+// EXPR :=
+// ( LINE ) |
+// < LINE > |
+// { LINE } |
+// [ LINE ] |
+internal fun lookFor(
+    closerSymbol: Char,
+    unconsumed: UnparsedLiteral,
+    wrapper: (Expression) -> Expression,
+    previousExpression: Expression = Expression.Empty
+): Pair<ParsedResult, UnparsedLiteral> {
+    return when {
+        unconsumed.none() -> Parsing(Error.Incomplete(missing = closerSymbol).left(), unconsumed)
+        unconsumed.first() == closerSymbol -> Parsing(wrapper(previousExpression).right(), unconsumed.drop(1))
+        unconsumed.first() in OPENINGS -> parseLine(unconsumed).mergeWith(
+            producer = { pendingLiteral -> lookFor(closerSymbol, pendingLiteral, wrapper) },
+            acc = { a, b -> wrapper(b) }
+        )
+        else -> Parsing(
+            Error.Corrupted(expected = arrayOf(closerSymbol), found = unconsumed.first()).left(),
+            unconsumed
+        )
+    }
+}
 
-    val innerExpr: Expression = parsedExpr.orNull()!!
-    val either: Either<Error, Expression> = when {
-        unparsed.none() -> Error.Incomplete(missing = looking).left()
-        unparsed.first() == looking -> Expression.Parenthesis(innerExpr).right()
-        else -> Error.Corrupted(expected = looking, found = unparsed.first()).left()
+internal fun Pair<ParsedResult, UnparsedLiteral>.mergeWith(
+    producer: (UnparsedLiteral) -> Pair<ParsedResult, UnparsedLiteral>,
+    acc: (Expression, Expression) -> Expression
+): Pair<Either<Error, Expression>, UnparsedLiteral> {
+    val (leftExpr, unparsedLiteral) = this
+    if (leftExpr.isLeft()) return this
+    val (rightExpr, unconsumed) = producer(unparsedLiteral)
+    val combinedParsing = rightExpr.map { parent -> acc(leftExpr.orNull()!!, parent) }
+    return Parsing(combinedParsing, unconsumed)
+}
+
+internal sealed class Expression {
+    class Sequence(vararg val expr: Expression) : Expression() {
+        override fun toString() = expr.joinToString("")
     }
 
-    return Pair(either, unparsed.drop(1))
+    class Parenthesis(val expr: Expression) : Expression() {
+        override fun toString() = "($expr)"
+    }
+
+    class AngleBrackets(val expr: Expression) : Expression() {
+        override fun toString() = "<$expr>"
+    }
+
+    class SquareBrackets(val expr: Expression) : Expression() {
+        override fun toString() = "[$expr]"
+    }
+
+    class KeyBrackets(val expr: Expression) : Expression() {
+        override fun toString() = "{$expr}"
+    }
+
+    object Empty : Expression() {
+        override fun toString() = ""
+    }
 }
 
-sealed class Expression {
-    class Parenthesis(val expr: Expression) : Expression() { override fun toString() = "($expr)" }
-    class AngleBrackets(val expr: Expression) : Expression() { override fun toString() = "<$expr>" }
-    class SquareBrackets(val expr: Expression) : Expression() { override fun toString() = "[$expr]" }
-    class KeyBrackets(val expr: Expression) : Expression() { override fun toString() = "{$expr}" }
-    object Empty : Expression() { override fun toString() = "" }
+internal sealed class Error {
+    internal class Corrupted(val expected: Array<Char>, val found: Char) : Error()
+    internal class Incomplete(val missing: Char) : Error()
 }
 
-sealed class Error {
-    class Corrupted(val expected: Char, val found: Char) : Error()
-    class Incomplete(val missing: Char) : Error()
-}
-
-fun score(char: Char): Int {
+internal fun score(char: Char): Int {
     val scoreTable = mapOf(
         ')' to 3,
         ']' to 57,

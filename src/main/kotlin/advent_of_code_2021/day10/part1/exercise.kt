@@ -1,20 +1,19 @@
 package advent_of_code_2021.day10.part1
 
 import advent_of_code_2021.shared.parseInput
+import org.assertj.core.api.Assertions.assertThat
 import arrow.core.*
 
 
 fun main() {
     val result = resolve("day10/part1/input.txt")
     println(result)
+    assertThat(result).isEqualTo(215229)
 }
 
 internal fun resolve(inputSource: String): Int {
     return parseInput(inputSource)
-        .map {
-            val parse = parseLine(it.toList())
-            parse
-        }
+        .map { parseLine(it.toList()) }
         .map { (either, _) -> either.swap().orNull() }
         .filter { it is Error.Corrupted }
         .map { score((it as Error.Corrupted).found) }
@@ -93,29 +92,12 @@ internal fun Pair<ParsedResult, UnparsedLiteral>.mergeWith(
 }
 
 internal sealed class Expression {
-    class Sequence(vararg val expr: Expression) : Expression() {
-        override fun toString() = expr.joinToString("")
-    }
-
-    class Parenthesis(val expr: Expression) : Expression() {
-        override fun toString() = "($expr)"
-    }
-
-    class AngleBrackets(val expr: Expression) : Expression() {
-        override fun toString() = "<$expr>"
-    }
-
-    class SquareBrackets(val expr: Expression) : Expression() {
-        override fun toString() = "[$expr]"
-    }
-
-    class KeyBrackets(val expr: Expression) : Expression() {
-        override fun toString() = "{$expr}"
-    }
-
-    object Empty : Expression() {
-        override fun toString() = ""
-    }
+    internal class Sequence(vararg val expr: Expression) : Expression() { override fun toString() = expr.joinToString("") }
+    internal class Parenthesis(val expr: Expression) : Expression() { override fun toString() = "($expr)" }
+    internal class AngleBrackets(val expr: Expression) : Expression() { override fun toString() = "<$expr>" }
+    internal class SquareBrackets(val expr: Expression) : Expression() { override fun toString() = "[$expr]" }
+    internal class KeyBrackets(val expr: Expression) : Expression() { override fun toString() = "{$expr}" }
+    internal object Empty : Expression() { override fun toString() = "" }
 }
 
 internal sealed class Error {

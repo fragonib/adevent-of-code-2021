@@ -11,12 +11,12 @@ fun main() {
 }
 
 internal fun resolve(inputSource: String): Int {
-    return parseInput(inputSource)
+    val missingTails = parseInput(inputSource)
         .map { parseLine(it.toList()) }
         .map { (either, _) -> either.swap().orNull() }
         .filter { it is Error.Incomplete }
-        .map { score((it as Error.Corrupted).found) }
-        .sum()
+        .map { score((it as Error.Corrupted).found) }.toList()
+    return missingTails.sorted()[missingTails.size / 2]
 }
 
 fun score(missingChars: List<Char>): Int {

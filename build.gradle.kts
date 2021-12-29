@@ -19,6 +19,7 @@ dependencies {
     implementation(platform("io.arrow-kt:arrow-stack:${arrowVersion}"))
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-core-data")
+    implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.2.0") //for JVM platform
 
     implementation("org.assertj:assertj-core:$assertJVersion")
 

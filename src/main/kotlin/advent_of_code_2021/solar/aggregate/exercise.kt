@@ -1,44 +1,62 @@
 package advent_of_code_2021.solar.aggregate
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
+import java.text.DecimalFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
 import java.time.Month.*
 import java.time.format.DateTimeFormatter
 
-val ZERO = Triple(0, 0, 0)
-val histogram = mutableMapOf<Month, Triple<Int, Int, Int>>()
+typealias Wats = Int
+typealias WatsOnEachInterval = Triple<Wats, Wats, Wats>
+
+val monthlyConsumption = mutableMapOf<Month, WatsOnEachInterval>()
 
 fun main() {
 
     csvReader { delimiter = ';' }
         .open("src/main/kotlin/advent_of_code_2021/solar/aggregate/input.csv") {
             readAllAsSequence().drop(1).forEach { row ->
-                val date = LocalDate.parse(row[1], DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                val hour = row[2].toInt()
-                val wat = row[3].split(",", limit = 2)[1].toInt()
-                addToHistogram(date, hour, wat)
+                val (dateLiteral, hourLiteral) = row[1].split(" ")
+                val date = LocalDate.parse(dateLiteral, DateTimeFormatter.ofPattern("yyyy/MM/dd"))
+                val hour = hourLiteral.split(":", limit = 2)[0].toInt()
+                val wats = row[3].toInt()
+                addConsumption(date, hour, wats)
             }
         }
 
     printHistogram()
 }
 
-private fun addToHistogram(date: LocalDate, hour: Int, wat: Int) {
+private fun addConsumption(date: LocalDate, hour: Wats, wats: Wats) {
     val month = date.month
     when {
-        isHoliday(date) -> addLlano(month, wat)
-        hour in 1..8 -> addValle(month, wat)
-        hour in 11..14 || hour in 17..22 -> addPunta(month, wat)
-        else -> addLlano(month, wat)
+        isHoliday(date) -> addLlano(month, wats)
+        hour in 1..8 -> addValle(month, wats)
+        hour in 11..14 || hour in 17..22 -> addPunta(month, wats)
+        else -> addLlano(month, wats)
     }
+}
+
+val ZERO_WATS: Triple<Wats, Wats, Wats> = WatsOnEachInterval(0, 0, 0)
+
+private fun addValle(month: Month, wats: Wats) {
+    monthlyConsumption.compute(month) { _, v -> (v ?: ZERO_WATS) + WatsOnEachInterval(wats, 0, 0) }
+}
+
+private fun addLlano(month: Month, wats: Wats) {
+    monthlyConsumption.compute(month) { _, v -> (v ?: ZERO_WATS) + WatsOnEachInterval(0, wats, 0) }
+}
+
+private fun addPunta(month: Month, wats: Wats) {
+    monthlyConsumption.compute(month) { _, v -> (v ?: ZERO_WATS) + WatsOnEachInterval(0, 0, wats) }
 }
 
 fun isHoliday(date: LocalDate): Boolean {
     if (date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY)
         return true
-    val holiday2021 = listOf(
+    val countryHolidaysOn2021 = listOf(
         1 to JANUARY,
         6 to JANUARY,
         2 to APRIL,
@@ -49,33 +67,20 @@ fun isHoliday(date: LocalDate): Boolean {
         8 to DECEMBER,
         25 to DECEMBER
     )
-    return Pair(date.dayOfMonth, date.month) in holiday2021
-}
-
-private fun addValle(month: Month, wat: Int) {
-    histogram.compute(month) { _, v -> (v ?: ZERO) + Triple(wat, 0, 0) }
-}
-
-private fun addLlano(month: Month, wat: Int) {
-    histogram.compute(month) { _, v -> (v ?: ZERO) + Triple(0, wat, 0) }
-}
-
-private fun addPunta(month: Month, wat: Int) {
-    histogram.compute(month) { _, v -> (v ?: ZERO) + Triple(0, 0, wat) }
+    return Pair(date.dayOfMonth, date.month) in countryHolidaysOn2021
 }
 
 fun printHistogram() {
-    val sortedMap = histogram.toSortedMap()
+    val sortedMap = monthlyConsumption.toSortedMap()
+    val kwFormat = DecimalFormat("#,###.###")
     println(Month.values().joinToString(separator = "\t"))
-    sortedMap.forEach { _, (valle, _, _) -> print("%.3f\t".format(valle / 1000.0)) }
-    println()
-    sortedMap.forEach { _, (_, llano, _) -> print("%.3f\t".format(llano / 1000.0)) }
-    println()
-    sortedMap.forEach { _, (_, _, punta) -> print("%.3f\t".format(punta / 1000.0)) }
+    println(sortedMap.values.joinToString(separator = "\t") { kwFormat.format(it.first / 1000.0) })
+    println(sortedMap.values.joinToString(separator = "\t") { kwFormat.format(it.second / 1000.0) })
+    println(sortedMap.values.joinToString(separator = "\t") { kwFormat.format(it.third / 1000.0) })
 }
 
-operator fun Triple<Int, Int, Int>.plus(other: Triple<Int, Int, Int>): Triple<Int, Int, Int> =
-    Triple(
+operator fun Triple<Wats, Wats, Wats>.plus(other: Triple<Wats, Wats, Wats>): Triple<Wats, Wats, Wats> =
+    WatsOnEachInterval(
         this.first + other.first,
         this.second + other.second,
         this.third + other.third
